@@ -1,4 +1,4 @@
 # miniapps
-Тестовые Telegram Mini Apps на GitHub Pages.
+Test Telegram Mini Apps on GitHub Pages.
 
-- `yt-search/` — поиск YouTube, сначала новые (ключ API вводится в приложении, хранится в localStorage).
+- `yt-search/` — YouTube search, newest first (API key entered in-app, stored in localStorage). Works only inside Telegram.

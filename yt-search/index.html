@@ -1,33 +1,34 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8">
+<html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>YouTube — новые</title>
+<title>YouTube — Newest</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="stylesheet" href="style.css">
 </head><body>
-<header><h1>YouTube — сначала новые</h1><button id="gear" class="icon" title="Настройки">⚙️</button></header>
-<main>
+<header id="hdr" hidden><h1>YouTube — Newest First</h1><button id="gear" class="icon" title="Settings">⚙️</button></header>
+<div id="gate" hidden class="gate"><div>📱</div><h2>Please open this app in Telegram</h2><p>This Mini App works only inside Telegram.</p></div>
+<main id="app" hidden>
   <div class="card" id="settings" hidden>
-    <label for="key">YouTube Data API v3 ключ</label>
+    <label for="key">YouTube Data API v3 key</label>
     <input id="key" type="password" autocomplete="off" placeholder="AIza…">
-    <div class="hint">Ключ хранится только в этом браузере (localStorage) и уходит напрямую в Google.</div>
-    <button id="saveKey" type="button">Сохранить ключ</button>
+    <div class="hint">The key is stored only on this device (localStorage) and is sent directly to Google.</div>
+    <button id="saveKey" type="button">Save key</button>
   </div>
   <div class="card">
-    <label for="q">Запрос</label>
-    <input id="q" type="search" enterkeyhint="search" placeholder="поисковый запрос">
-    <label for="from">От (не раньше)</label>
+    <label for="q">Query</label>
+    <input id="q" type="search" enterkeyhint="search" placeholder="search query">
+    <label for="from">From (not earlier)</label>
     <input id="from" type="datetime-local" step="60">
-    <label for="to">До (не позже)</label>
-    <div class="from-wrap"><input id="to" type="datetime-local" step="60"><button type="button" class="now-btn" id="toNow">Сейчас</button></div>
-    <label for="kind">Тип</label>
-    <select id="kind"><option value="all">Shorts + видео</option><option value="shorts">Только Shorts</option><option value="video">Только видео</option></select>
-    <button id="go" type="button">Искать</button>
+    <label for="to">To (not later)</label>
+    <div class="from-wrap"><input id="to" type="datetime-local" step="60"><button type="button" class="now-btn" id="toNow">Now</button></div>
+    <label for="kind">Type</label>
+    <select id="kind"><option value="all">Shorts + videos</option><option value="shorts">Shorts only</option><option value="video">Videos only</option></select>
+    <button id="go" type="button">Search</button>
     <div id="status"></div>
   </div>
   <div class="list" id="list"></div>
   <div class="pager" id="pager" hidden>
-    <button type="button" id="prev" disabled>← Назад</button><span id="pageInfo"></span><button type="button" id="next" disabled>Вперёд →</button>
+    <button type="button" id="prev" disabled>← Prev</button><span id="pageInfo"></span><button type="button" id="next" disabled>Next →</button>
   </div>
 </main>
 <script src="app.js"></script>

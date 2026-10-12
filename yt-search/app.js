@@ -5,8 +5,11 @@ const VIDEOS_URL = 'https://www.googleapis.com/youtube/v3/videos';
 const LS = { key: 'yts_key', q: 'yts_q', kind: 'yts_kind', from: 'yts_from' };
 const $ = id => document.getElementById(id);
 const tg = window.Telegram && window.Telegram.WebApp;
-if (tg && tg.initData !== undefined) { try { tg.ready(); tg.expand(); } catch (e) {} }
-const openLink = url => { if (tg && tg.initData) tg.openLink(url); else window.open(url, '_blank', 'noopener'); };
+const inTelegram = !!(tg && tg.initData && tg.platform && tg.platform !== 'unknown');
+if (!inTelegram) { document.getElementById('gate').hidden = false; throw new Error('Not in Telegram'); }
+try { tg.ready(); tg.expand(); } catch (e) {}
+document.getElementById('app').hidden = false; document.getElementById('hdr').hidden = false;
+const openLink = url => tg.openLink(url);
 
 let pageTokens = [''], pageIndex = 0, nextPageToken = '';
 const pad = n => String(n).padStart(2, '0');
@@ -16,12 +19,12 @@ const toRfc3339 = v => { if (!v) return ''; const d = new Date(v); return isNaN(
 function relativeTime(iso) {
   const t = Date.parse(iso); if (isNaN(t)) return iso || '';
   const sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
-  if (sec < 60) return `${sec} сек назад`;
-  const m = Math.floor(sec / 60); if (m < 60) return `${m} мин назад`;
-  const h = Math.floor(m / 60); if (h < 24) return `${h} ч назад`;
-  const d = Math.floor(h / 24); if (d < 30) return `${d} дн назад`;
-  const mo = Math.floor(d / 30); if (mo < 12) return `${mo} мес назад`;
-  return `${Math.floor(d / 365)} г назад`;
+  if (sec < 60) return `${sec} s ago`;
+  const m = Math.floor(sec / 60); if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h} h ago`;
+  const d = Math.floor(h / 24); if (d < 30) return `${d} d ago`;
+  const mo = Math.floor(d / 30); if (mo < 12) return `${mo} mo ago`;
+  return `${Math.floor(d / 365)} y ago`;
 }
 function parseDuration(v) {
   const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(v || '');
@@ -75,7 +78,7 @@ function render(items) {
     const body = document.createElement('div');
     const title = document.createElement('div'); title.className = 'title'; title.textContent = decode(it.title);
     const meta = document.createElement('div'); meta.className = 'meta';
-    const badge = document.createElement('span'); badge.className = 'badge' + (it.isShort ? ' shorts' : ''); badge.textContent = it.isShort ? 'Shorts' : 'Видео';
+    const badge = document.createElement('span'); badge.className = 'badge' + (it.isShort ? ' shorts' : ''); badge.textContent = it.isShort ? 'Shorts' : 'Video';
     meta.append(badge, `${relativeTime(it.publishedAt)} · ${decode(it.channel)}`);
     body.append(title, meta); a.appendChild(body); list.appendChild(a);
   }
@@ -85,18 +88,18 @@ function setStatus(t, err) { $('status').textContent = t; $('status').className 
 async function run(reset) {
   const key = localStorage.getItem(LS.key) || '';
   const q = $('q').value.trim(), kind = $('kind').value, from = $('from').value, to = $('to').value;
-  if (!key) { $('settings').hidden = false; setStatus('Сначала введи API ключ', true); return; }
-  if (!q) { setStatus('Введи запрос', true); return; }
+  if (!key) { $('settings').hidden = false; setStatus('Enter your API key first', true); return; }
+  if (!q) { setStatus('Enter a query', true); return; }
   localStorage.setItem(LS.q, q); localStorage.setItem(LS.kind, kind); localStorage.setItem(LS.from, from);
   if (reset) { pageTokens = ['']; pageIndex = 0; nextPageToken = ''; }
   $('go').disabled = $('prev').disabled = $('next').disabled = true;
-  setStatus('Ищу…');
+  setStatus('Searching…');
   try {
     const r = await searchNewest(key, q, kind, from, to, pageTokens[pageIndex] || '');
     nextPageToken = r.nextPageToken; render(r.items);
-    setStatus(r.items.length ? `На странице: ${r.items.length}` : 'Пусто');
+    setStatus(r.items.length ? `On this page: ${r.items.length}` : 'No results');
     $('pager').hidden = false; $('prev').disabled = pageIndex <= 0; $('next').disabled = !nextPageToken;
-    $('pageInfo').textContent = `Страница ${pageIndex + 1}`;
+    $('pageInfo').textContent = `Page ${pageIndex + 1}`;
     window.scrollTo({ top: 0 });
   } catch (e) { setStatus(String(e.message || e), true); $('pager').hidden = true; }
   finally { $('go').disabled = false; }
@@ -111,7 +114,7 @@ if (!$('key').value) $('settings').hidden = false;
 $('gear').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; });
 $('saveKey').addEventListener('click', () => {
   const k = $('key').value.trim(); if (k) localStorage.setItem(LS.key, k); else localStorage.removeItem(LS.key);
-  $('settings').hidden = !!k; setStatus(k ? 'Ключ сохранён' : 'Ключ удалён');
+  $('settings').hidden = !!k; setStatus(k ? 'Key saved' : 'Key removed');
 });
 $('go').addEventListener('click', () => run(true));
 $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.target.blur(); run(true); } });
