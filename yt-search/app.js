@@ -5,8 +5,15 @@ const VIDEOS_URL = 'https://www.googleapis.com/youtube/v3/videos';
 const LS = { key: 'yts_key', q: 'yts_q', kind: 'yts_kind', from: 'yts_from' };
 const $ = id => document.getElementById(id);
 const tg = window.Telegram && window.Telegram.WebApp;
-const inTelegram = !!(tg && tg.initData && tg.platform && tg.platform !== 'unknown');
-if (!inTelegram) { document.getElementById('gate').hidden = false; throw new Error('Not in Telegram'); }
+function showErr(msg) { var el = document.getElementById('err'); if (el) { el.hidden = false; el.textContent = 'Error: ' + msg; } }
+window.addEventListener('error', function (e) { if (/Not in Telegram/.test(e.message)) return; showErr(e.message + ' (' + (e.filename || '') + ':' + (e.lineno || '') + ')'); });
+window.addEventListener('unhandledrejection', function (e) { showErr(String(e.reason && e.reason.message || e.reason)); });
+var inTelegram = !!(tg && tg.initData && tg.platform && tg.platform !== 'unknown');
+if (!inTelegram) {
+  document.getElementById('gate').hidden = false;
+  document.getElementById('gateInfo').textContent = 'platform: ' + (tg ? tg.platform : 'no WebApp') + ', initData: ' + (tg && tg.initData ? 'yes' : 'empty');
+  throw new Error('Not in Telegram');
+}
 try { tg.ready(); tg.expand(); } catch (e) {}
 document.getElementById('app').hidden = false; document.getElementById('hdr').hidden = false;
 const openLink = url => tg.openLink(url);
@@ -42,7 +49,7 @@ async function searchNewest(key, q, kind, from, to, pageToken) {
     maxResults: String(kind === 'all' ? PAGE_SIZE : 50), safeSearch: 'none', key });
   if (pageToken) p.set('pageToken', pageToken);
   let after = toRfc3339(from), before = toRfc3339(to);
-  if (after && before && after > before) [after, before] = [before, after];
+  if (after && before && after > before) { var tmp = after; after = before; before = tmp; }
   if (after) p.set('publishedAfter', after);
   if (before) p.set('publishedBefore', before);
   const data = await getJson(`${SEARCH_URL}?${p}`);
@@ -61,7 +68,7 @@ async function searchNewest(key, q, kind, from, to, pageToken) {
     const sec = dur[it.id] || 0, isShort = sec > 0 && sec <= SHORTS_MAX_SEC;
     if (kind === 'shorts' && !isShort) continue;
     if (kind === 'video' && isShort) continue;
-    items.push({ ...it, isShort, url: isShort ? `https://www.youtube.com/shorts/${it.id}` : `https://www.youtube.com/watch?v=${it.id}` });
+    items.push(Object.assign({}, it, { isShort: isShort, url: isShort ? `https://www.youtube.com/shorts/${it.id}` : `https://www.youtube.com/watch?v=${it.id}` }));
     if (items.length >= PAGE_SIZE) break;
   }
   return { items, nextPageToken: data.nextPageToken || '' };
@@ -100,11 +107,12 @@ async function run(reset) {
     setStatus(r.items.length ? `On this page: ${r.items.length}` : 'No results');
     $('pager').hidden = false; $('prev').disabled = pageIndex <= 0; $('next').disabled = !nextPageToken;
     $('pageInfo').textContent = `Page ${pageIndex + 1}`;
-    window.scrollTo({ top: 0 });
+    window.scrollTo(0, 0);
   } catch (e) { setStatus(String(e.message || e), true); $('pager').hidden = true; }
   finally { $('go').disabled = false; }
 }
 
+try {
 $('q').value = localStorage.getItem(LS.q) || '';
 $('kind').value = localStorage.getItem(LS.kind) || 'all';
 $('from').value = localStorage.getItem(LS.from) || '';
@@ -121,3 +129,4 @@ $('q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.target.blur
 $('toNow').addEventListener('click', () => { $('to').value = toLocalInput(new Date()); });
 $('prev').addEventListener('click', () => { if (pageIndex > 0) { pageIndex--; run(false); } });
 $('next').addEventListener('click', () => { if (!nextPageToken) return; pageIndex++; pageTokens[pageIndex] = nextPageToken; run(false); });
+} catch (e) { showErr(e && e.message || e); }
