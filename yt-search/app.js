@@ -115,7 +115,8 @@ async function run(reset) {
 try {
 $('q').value = localStorage.getItem(LS.q) || '';
 $('kind').value = localStorage.getItem(LS.kind) || 'all';
-$('from').value = localStorage.getItem(LS.from) || '';
+var savedFrom = localStorage.getItem(LS.from);
+$('from').value = savedFrom !== null ? savedFrom : toLocalInput(new Date(Date.now() - 24 * 3600 * 1000));
 $('to').value = toLocalInput(new Date());
 $('key').value = localStorage.getItem(LS.key) || '';
 if (!$('key').value) $('settings').hidden = false;
